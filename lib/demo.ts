@@ -137,7 +137,10 @@ export function demoGrade(req: GradeRequest): GradeResponse {
   });
 
   const coverage = groups.length ? matched.length / groups.length : 0;
-  let score = 10 + coverage * 85;
+  // Small credit for staying on topic (naming things that are actually in these lines).
+  const chunkText = req.code.split("\n").slice(req.chunk.startLine - 1, req.chunk.endLine).join("\n");
+  const onTopic = topIdentifiers(chunkText, 12).some((id) => answer.includes(id.toLowerCase()));
+  let score = 10 + coverage * 85 + (onTopic ? 12 : 0);
   if (words.length < 8) score -= 20; // one-liners rarely show understanding
   if (words.length >= 25 && coverage > 0) score += 5; // reward explaining, not keyword lists
   const final = applyHintCap(score, req.hintUsed);

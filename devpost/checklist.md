@@ -39,7 +39,7 @@ Build mode: fast (learner asked the agent to build autonomously and commit as it
   Learner check: Finish a session and copy the prompt into your coding agent.
   Commit: `Add Ownership Map report and blind-spot prompt`
 
-- [ ] **4. Your sessions live in a library with a progress trend**
+- [x] **4. Your sessions live in a library with a progress trend**
   Becomes usable: `/library` lists sessions with mini heat strips and scores, trend chart, delete, empty state.
   Why now: Gives the "come back and improve" half of the loop.
   PRD ref: `prd.md > Library and progress`
