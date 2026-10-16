@@ -54,14 +54,14 @@ async function main() {
   // 1: strong answer
   await box.fill(STRONG[0]);
   await submit.click();
-  await page.locator(".verdict").waitFor();
+  await page.locator(".verdict").waitFor({ timeout: 60_000 });
   await shot(page, "5-verdict-owned");
   await next.click();
 
   // 2: vague answer
   await box.fill(VAGUE);
   await submit.click();
-  await page.locator(".verdict").waitFor();
+  await page.locator(".verdict").waitFor({ timeout: 60_000 });
   await shot(page, "6-verdict-gap");
   await next.click();
 
@@ -74,7 +74,7 @@ async function main() {
   // 4: strong answer, then go to the report
   await box.fill(STRONG[3]);
   await submit.click();
-  await page.locator(".verdict").waitFor();
+  await page.locator(".verdict").waitFor({ timeout: 60_000 });
   await shot(page, "7-session-painted");
   await page.getByRole("button", { name: /See your Ownership Map/ }).click();
   await page.waitForURL(/\/report$/);
@@ -93,7 +93,7 @@ async function main() {
         "It works out how much time has elapsed since lastRefill, adds tokens proportional to that, caps them at capacity with Math.min so idle clients can't bank more, and updates lastRefill so time isn't counted twice. For a new client it creates a full bucket keyed by req.ip and refills before checking.",
     );
     await submit.click();
-    await page.locator(".verdict").waitFor();
+    await page.locator(".verdict").waitFor({ timeout: 60_000 });
     await next.click();
   }
   await page.waitForURL(/\/report$/);

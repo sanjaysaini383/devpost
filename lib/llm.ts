@@ -10,7 +10,8 @@ import { z } from "zod";
 export type Provider = "gemini" | "anthropic";
 export type Effort = "low" | "medium";
 
-export const GEMINI_DEFAULT_MODEL = "gemini-flash-latest";
+// Lite answered reliably on the free tier when the larger Flash models were overloaded (Oct 2026).
+export const GEMINI_DEFAULT_MODEL = "gemini-3.5-flash-lite";
 export const CLAUDE_MODEL = "claude-opus-5-5";
 
 export class GraderError extends Error {}
@@ -59,36 +60,81 @@ function geminiSchema(schema: z.ZodType): unknown {
   return strip(json);
 }
 
+/**
+ * Free-tier models get "high demand" 503s and per-model 429 quotas, so we try the
+ * configured model first, then fall back through other Flash models.
+ */
+export const GEMINI_FALLBACK_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.5-flash"];
+
+// Remember the model that last answered so we don't pay for known-overloaded ones on every
+// request; re-try the preferred order after a while in case demand has dropped.
+const STICKY_MS = 10 * 60_000;
+let sticky: { model: string; until: number } | null = null;
+
+export function geminiModelChain(): string[] {
+  const chain = [...new Set([activeModel() ?? GEMINI_DEFAULT_MODEL, ...GEMINI_FALLBACK_MODELS])];
+  if (sticky && Date.now() < sticky.until && chain.includes(sticky.model)) {
+    return [sticky.model, ...chain.filter((m) => m !== sticky!.model)];
+  }
+  return chain;
+}
+
+/** Errors worth retrying on a different model: overloaded, rate-limited, gone, or server-side. */
+function isRetryable(err: unknown): boolean {
+  return err instanceof ApiError && (err.status === 429 || err.status === 404 || err.status >= 500);
+}
+
 async function gemini<T>(schema: z.ZodType<T>, system: string, user: string): Promise<T> {
   googleClient ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!.trim() });
-  let text: string | undefined;
-  try {
-    const response = await googleClient.models.generateContent({
-      model: activeModel()!,
-      contents: user,
-      config: {
-        systemInstruction: system,
-        responseMimeType: "application/json",
-        responseJsonSchema: geminiSchema(schema),
-        temperature: 0.2,
-        httpOptions: { timeout: 60_000 },
-      },
-    });
-    text = response.text;
-    if (!text) {
-      const reason = response.candidates?.[0]?.finishReason ?? response.promptFeedback?.blockReason;
-      throw new GraderError(reason ? `The model returned no answer (${reason}).` : "The model returned no answer.");
+  const chain = geminiModelChain();
+  let lastErr: unknown;
+  for (const model of chain) {
+    try {
+      const result = await geminiOnce(googleClient, model, schema, system, user);
+      sticky = model === chain[0] && !sticky ? null : { model, until: Date.now() + STICKY_MS };
+      return result;
+    } catch (err) {
+      lastErr = err;
+      if (!isRetryable(err)) break;
+      console.warn(`[teachback] Gemini ${model} unavailable (${(err as ApiError).status}); trying next model`);
     }
-  } catch (err) {
-    if (err instanceof GraderError) throw err;
-    if (err instanceof ApiError) {
-      if (err.status === 429) throw new GraderError("Free-tier rate limit hit — wait a minute and retry.");
-      if (err.status === 401 || err.status === 403 || /api key/i.test(err.message))
-        throw new GraderError("The Gemini API key was rejected.");
-      if (err.status === 404) throw new GraderError(`Gemini model "${activeModel()}" wasn't found — check GEMINI_MODEL.`);
-      throw new GraderError(`Gemini API error ${err.status}`);
-    }
-    throw new GraderError("Couldn't reach the Gemini API.");
+  }
+  const err = lastErr;
+  if (err instanceof GraderError) throw err;
+  if (err instanceof ApiError) {
+    if (err.status === 429) throw new GraderError("Free-tier rate limit hit — wait a minute and retry.");
+    if (err.status === 401 || err.status === 403 || /api key/i.test(err.message))
+      throw new GraderError("The Gemini API key was rejected.");
+    if (err.status === 503) throw new GraderError("Gemini is overloaded right now — retry in a moment.");
+    if (err.status === 404) throw new GraderError(`Gemini model "${chain[0]}" wasn't found — check GEMINI_MODEL.`);
+    throw new GraderError(`Gemini API error ${err.status}`);
+  }
+  throw new GraderError("Couldn't reach the Gemini API.");
+}
+
+async function geminiOnce<T>(
+  client: GoogleGenAI,
+  model: string,
+  schema: z.ZodType<T>,
+  system: string,
+  user: string,
+): Promise<T> {
+  const response = await client.models.generateContent({
+    model,
+    contents: user,
+    config: {
+      systemInstruction: system,
+      responseMimeType: "application/json",
+      responseJsonSchema: geminiSchema(schema),
+      temperature: 0.2,
+      // One attempt per model: on overload we move to the next model instead of backing off.
+      httpOptions: { timeout: 30_000, retryOptions: { attempts: 1 } },
+    },
+  });
+  const text = response.text;
+  if (!text) {
+    const reason = response.candidates?.[0]?.finishReason ?? response.promptFeedback?.blockReason;
+    throw new GraderError(reason ? `The model returned no answer (${reason}).` : "The model returned no answer.");
   }
   return validate(schema, text);
 }

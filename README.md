@@ -51,7 +51,7 @@ npm run dev          # http://localhost:3000
 2. Copy `.env.example` to `.env.local` and paste the key after `GEMINI_API_KEY=`.
 3. Restart `npm run dev`. The nav badge changes to **AI grader · Gemini**.
 
-The free tier allows roughly 10 requests a minute, which is plenty: a session makes one request per answer. Google may use free-tier prompts to improve its products, so don't paste secrets. `GEMINI_MODEL` overrides the default `gemini-flash-latest`. If you'd rather use Claude, set `ANTHROPIC_API_KEY` instead. Without any key, the app runs end to end in labelled demo mode.
+The free tier allows roughly 10 requests a minute, which is plenty: a session makes one request per answer. Google may use free-tier prompts to improve its products, so don't paste secrets. `GEMINI_MODEL` sets the first model tried (default `gemini-3.5-flash-lite`, the free-tier model that stayed available under load). If a model is overloaded, TeachBack automatically falls back to other Flash models. If you'd rather use Claude, set `ANTHROPIC_API_KEY` instead. Without any key, the app runs end to end in labelled demo mode.
 
 ### Checks
 

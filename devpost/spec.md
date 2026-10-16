@@ -31,7 +31,7 @@ PRD ref: `prd.md > The Core Journey`.
 - **Next.js 16 (App Router) + React 19 + TypeScript 5** — https://nextjs.org/docs. One framework covers pages and server routes; easy optional deploy to Vercel.
 - **@google/genai 2.30** — https://ai.google.dev/gemini-api/docs. `models.generateContent` with `responseMimeType: "application/json"` + `responseJsonSchema` (from zod via `z.toJSONSchema`), re-validated with zod. **Learner choice:** a free provider, because the learner has no Anthropic account.
 - **@anthropic-ai/sdk 0.135** (optional) — used only if `ANTHROPIC_API_KEY` is set and `GEMINI_API_KEY` is not.
-- **Model:** `gemini-flash-latest` by default (override with `GEMINI_MODEL`); `claude-opus-5-5` when using Claude.
+- **Model:** `gemini-3.5-flash-lite` by default (override with `GEMINI_MODEL`), falling back to `gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-3.5-flash` on 429/503/404; `claude-opus-5-5` when using Claude.
 - **zod 4** — https://zod.dev. Schemas for AI output and request bodies.
 - **Plain CSS** with design tokens in `app/globals.css` (no Tailwind) — full control over the editorial look.
 - **Fonts via `next/font/google`**: Fraunces, IBM Plex Sans, IBM Plex Mono.
