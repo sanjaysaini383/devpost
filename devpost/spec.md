@@ -70,6 +70,11 @@ From `prd.md > Look and Feel`.
 - `CodeHeat.tsx` — renders code lines with number, heat gutter, highlight, active-chunk outline. Used by Session, Report, Home sample.
 - `VerdictCard.tsx`, `ProgressRail.tsx`, `ScoreDial.tsx`, `TrendChart.tsx` (inline SVG), `HeatStrip.tsx` (mini bar for library rows).
 
+### Voice input
+- `components/VoiceButton.tsx` + `lib/speech.ts`. Uses the browser's **Web Speech API** (`SpeechRecognition` / `webkitSpeechRecognition`) with `continuous` + `interimResults`, `lang` from the browser (`navigator.language`, fallback `en-US`). Final phrases call `onFinal(text)`, and SessionView appends them to the chunk's draft. Interim text calls `onInterim(text)`, which is shown live under the answer box. The component stops recognition on unmount, so switching chunks or submitting stops listening. No server, key or cost. PRD ref: `prd.md > Speaking an answer (voice)`.
+- Docs: https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition. Supported in Chrome, Edge and Safari; not in Firefox. Chrome sends audio to Google's speech service.
+- Testing: `scripts/e2e.ts` installs a fake `SpeechRecognition` via `page.addInitScript` that emits an interim and a final result, so the flow is checked without a microphone.
+
 ### Logic (`lib/`)
 - `types.ts` — `Chunk`, `Answer`, `Session`, `Verdict`.
 - `ai.ts` — Anthropic client, `analyzeCode`, `gradeAnswer`, zod schemas, `hasApiKey`.
@@ -129,6 +134,7 @@ Both providers return the same shapes. Analyze returns `{ title, chunks: [{ titl
 - **AI call fails / refuses / times out** → route returns 502 with message; Session shows "Try again" + "Use demo grader".
 - **AI returns bad line ranges** → `lib/ai.ts` clamps ranges to the file, sorts, removes overlaps; if fewer than 2 chunks survive, falls back to `heuristicChunks`.
 - **localStorage unavailable** (private mode) → in-memory fallback; banner says sessions won't be saved.
+- **No speech recognition / mic blocked** → mic button disabled with "use Chrome, Edge or Safari" tooltip, or an inline "allow microphone access" message; typing always works.
 
 ## What Was Simplified and Why
 - **localStorage** instead of a database — single-user proof; a backend would add infra without proving the kernel.

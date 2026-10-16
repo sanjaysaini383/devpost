@@ -735,6 +735,50 @@ textarea.code-input {
   font-size: 0.93rem;
 }
 
+.btn.mic svg {
+  margin-left: -2px;
+}
+
+.btn.mic.listening {
+  background: var(--gap-bg);
+  border-color: var(--gap);
+  color: var(--ink);
+}
+
+.rec-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gap);
+  animation: recPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+.interim {
+  margin-top: -6px;
+  font-size: 0.92rem;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.interim em {
+  color: var(--muted);
+}
+
 .verdict {
   border-radius: 12px;
   padding: 16px 18px;

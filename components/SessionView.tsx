@@ -10,6 +10,8 @@ import { useSession } from "@/lib/storage";
 import { VERDICT_LABEL } from "@/lib/scoring";
 import type { GradeResponse } from "@/lib/types";
 import { MIN_ANSWER } from "@/lib/validate";
+import { appendSpoken } from "@/lib/speech";
+import { VoiceButton } from "./VoiceButton";
 
 export function SessionView({ id }: { id: string }) {
   const router = useRouter();
@@ -19,6 +21,8 @@ export function SessionView({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pulseId, setPulseId] = useState<string | undefined>();
+  const [interim, setInterim] = useState("");
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   // Pick the first unanswered chunk once the session loads.
   useEffect(() => {
@@ -51,6 +55,8 @@ export function SessionView({ id }: { id: string }) {
   function select(chunkId: string) {
     setActiveId(chunkId);
     setError(null);
+    setInterim("");
+    setVoiceError(null);
   }
 
   async function submit(forceDemo = false) {
@@ -180,6 +186,16 @@ export function SessionView({ id }: { id: string }) {
               disabled={busy}
             />
           </label>
+          {interim && (
+            <p className="interim" aria-live="polite">
+              <span className="rec-dot" aria-hidden /> <em>hearing:</em> {interim}
+            </p>
+          )}
+          {voiceError && (
+            <p className="notice warn small" role="alert">
+              {voiceError}
+            </p>
+          )}
 
           {error && (
             <div className="notice error stack" role="alert" style={{ gap: 8 }}>
@@ -212,6 +228,16 @@ export function SessionView({ id }: { id: string }) {
                 "Submit explanation"
               )}
             </button>
+            <VoiceButton
+              key={chunk.id}
+              disabled={busy}
+              onFinal={(text) => {
+                const id = chunk.id;
+                setDrafts((d) => ({ ...d, [id]: appendSpoken(d[id] ?? draft, text) }));
+              }}
+              onInterim={setInterim}
+              onError={setVoiceError}
+            />
             {!hintShown && (
               <button className="btn ghost" onClick={() => update(markHint(session, chunk.id))} disabled={busy}>
                 Hint <span className="muted small">(caps at 85)</span>

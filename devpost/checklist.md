@@ -59,6 +59,16 @@ Build mode: fast (learner asked the agent to build autonomously and commit as it
   Learner check: Open the home page on desktop and phone width.
   Commit: `Add landing page, empty states and README`
 
+- [x] **6. You can say your explanation out loud**
+  Becomes usable: A mic button on the Session screen turns speech into answer text live; unsupported browsers and blocked mics degrade to typing with a clear message.
+  Why now: Added after the core build at the learner's request; it rides on the finished answer box and changes nothing else in the loop.
+  PRD ref: `prd.md > Speaking an answer (voice)`
+  Spec ref: `spec.md > Components > Voice input`, `spec.md > Important Failure Modes`
+  Build: `lib/speech.ts` (feature detection + minimal types), `components/VoiceButton.tsx`, wire into `SessionView.tsx`, styles.
+  Verify (mechanical): typecheck + build; e2e with a fake SpeechRecognition confirms the interim text shows, the final text lands in the answer box, and the answer grades; e2e without speech support confirms the button is disabled.
+  Learner check: In Chrome, open a session, press the mic, explain the chunk out loud, and see your words appear; then submit.
+  Commit: `Add voice answers with the Web Speech API`
+
 ## Hands-on Checkpoints
 
 - [ ] Early usable behavior explored — after slice 1 (learner to try the sample loop)

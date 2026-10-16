@@ -14,13 +14,19 @@ It's the *teach-back* method nurses use to confirm a patient understood their in
 |---|---|
 | `/` | Landing page with a live preview of a session painting itself. |
 | `/new` | Paste 5–300 lines of code (or pick one of three AI-written samples), optionally say what it should do, then **Analyze**. |
-| `/session/[id]` | The teach-back loop. The code sits on the left with a heat gutter; one review-style question per chunk sits on the right. Submit an explanation, take a hint (score capped at 85), or skip. Each verdict repaints its lines straight away. |
+| `/session/[id]` | The teach-back loop. The code sits on the left with a heat gutter; one review-style question per chunk sits on the right. Type an explanation, or press **Speak** and say it out loud, then submit. You can also take a hint (score capped at 85) or skip. Each verdict repaints its lines straight away. |
 | `/session/[id]/report` | The Ownership Map: a weighted score dial, the code painted by understanding, per-chunk feedback with missed concepts, a copyable **"Teach me my blind spots"** prompt, and **Retake**. |
 | `/library` | Every session, with mini heat strips, scores, a trend chart of your ownership over time, and delete. |
 
 | Teach-back session | Library and progress |
 |---|---|
 | ![Session](docs/session.png) | ![Library](docs/library.png) |
+
+### Voice answers
+
+Press **Speak** and explain the chunk out loud, like defending it in a code review. Your words appear live as you talk and land in the answer box for you to edit before submitting. This uses the browser's built-in Web Speech API, so it's free and needs no key. It works in Chrome, Edge and Safari; Firefox users can type. In Chrome, the audio is converted to text by Google's speech service.
+
+![Voice answer](docs/voice.png)
 
 ## How it works
 
@@ -61,6 +67,7 @@ npm run typecheck
 npm run build && npm start
 npm run smoke        # API + route smoke test against a running server (BASE_URL, default :3000)
 npm run e2e          # Playwright walk-through of the whole journey; screenshots to docs/screenshots
+npm run e2e:voice    # voice answers with a simulated microphone, plus the unsupported-browser fallback
                      # (first time: npx playwright install chromium)
 ```
 
@@ -77,8 +84,8 @@ This project was planned and built with the [Devpost Learn skill pack](https://g
 
 ```
 app/            routes: / · /new · /session/[id] · /session/[id]/report · /library · /api/{analyze,grade,status}
-components/     CodeHeat (heat-painted code), SessionView, ReportView, LibraryView, ScoreDial, TrendChart, …
-lib/            ai.ts (prompts), llm.ts (Gemini/Claude providers), demo.ts (offline grader), samples.ts, scoring.ts, prompt.ts, session.ts, storage.ts
+components/     CodeHeat (heat-painted code), SessionView, VoiceButton, ReportView, LibraryView, ScoreDial, TrendChart, …
+lib/            ai.ts (prompts), llm.ts (Gemini/Claude providers), speech.ts (Web Speech API), demo.ts (offline grader), samples.ts, scoring.ts, prompt.ts, session.ts, storage.ts
 scripts/        smoke.ts, e2e.ts
 devpost/        planning docs from the skill pack
 ```

@@ -145,3 +145,17 @@ test("gemini provider: model JSON is validated against the schema", async () => 
   assert.throws(() => validate(S, "not json"), GraderError);
   assert.throws(() => validate(S, '{"score": "high"}'), GraderError);
 });
+
+test("speech helpers: split results and append spoken phrases cleanly", async () => {
+  const { readResults, appendSpoken, speechErrorMessage } = await import("./speech");
+  const result = (transcript: string, isFinal: boolean) => Object.assign([{ transcript }], { isFinal });
+  const e = { resultIndex: 1, results: Object.assign([result("old", true), result(" it refills tokens", true), result(" based on", false)], {}) };
+  assert.deepEqual(readResults(e as never), { final: "it refills tokens", interim: "based on" });
+  assert.equal(appendSpoken("", "it refills tokens"), "It refills tokens");
+  assert.equal(appendSpoken("It refills tokens", "then caps them"), "It refills tokens. Then caps them");
+  assert.equal(appendSpoken("Because,", "it caps"), "Because, it caps");
+  assert.equal(appendSpoken("It refills.", "then caps"), "It refills. Then caps");
+  assert.equal(appendSpoken("Keep me", "   "), "Keep me");
+  assert.equal(speechErrorMessage("no-speech"), null);
+  assert.match(speechErrorMessage("not-allowed")!, /blocked/);
+});

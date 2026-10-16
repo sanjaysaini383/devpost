@@ -61,6 +61,16 @@ A top navigation bar (logo, New, Library, AI-mode badge) is present on every scr
 - [ ] **Skip** marks the chunk Blind spot with score 0 and moves on.
 - [ ] After a verdict, "Next chunk" advances; the progress rail shows each chunk's verdict colour; any chunk in the rail can be revisited and re-answered.
 
+### Speaking an answer (voice)
+Added after the core build at the learner's request (2026-10-16): explaining out loud is closer to a real code review than typing, and the skill pack itself recommends speech-to-text.
+- As a developer, I want to say my explanation out loud so that it feels like defending the code in a review, not filling in a form.
+  - [ ] A **mic button** sits beside the answer box. Pressing it starts listening, and it shows a pulsing "Listening…" state with a Stop control.
+  - [ ] While I speak, the words I'm saying appear live under the answer box (interim), and finished phrases are appended to my answer text so I can edit them before submitting.
+  - [ ] Pressing Stop, submitting, or switching chunks stops listening.
+  - [ ] If the browser doesn't support speech recognition (e.g. Firefox), the mic button is shown disabled with a tooltip saying to use Chrome, Edge or Safari, or to type instead.
+  - [ ] If microphone permission is denied, an inline message explains how to allow it; typing still works.
+  - [ ] The mic button's tooltip says the browser's speech service converts the audio to text (in Chrome, this happens on Google's servers).
+
 ### Ownership Map report
 - [ ] Overall score = average of chunk scores weighted by chunk line count, shown as a dial with a label (e.g. "You own 68% of this code").
 - [ ] Full code rendered with every line painted by its chunk's verdict.
@@ -86,9 +96,10 @@ A top navigation bar (logo, New, Library, AI-mode badge) is present on every scr
 - Three-level verdict instead of pass/fail — agent decision: "shaky" is the most common and most useful real state.
 - Gaps become a prompt for the coding agent — agent decision: ties the product back to the hackathon's flipped-interaction lesson and gives the user a next action.
 - Demo grader shipped and labeled — agent decision: reviewers and users without a key can still see the full journey; never disguised as AI.
+- Voice answers — **learner decision** (2026-10-16): chosen from a list of possible additions. Browser-native speech recognition keeps it free and adds no API key.
 
 ## What We're Building
-All five screens above; paste or sample input; AI (or labeled demo) chunking and grading; hint/skip; live heatmap; report with weighted score and blind-spot prompt; local library with trend and retake.
+All five screens above; paste or sample input; AI (or labeled demo) chunking and grading; hint/skip; voice answers; live heatmap; report with weighted score and blind-spot prompt; local library with trend and retake.
 
 ## Deferred From the POC
 - Focus retake of only red chunks — Retake of the whole snippet proves the loop.
