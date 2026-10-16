@@ -68,6 +68,8 @@ npm run build && npm start
 npm run smoke        # API + route smoke test against a running server (BASE_URL, default :3000)
 npm run e2e          # Playwright walk-through of the whole journey; screenshots to docs/screenshots
 npm run e2e:voice    # voice answers with a simulated microphone, plus the unsupported-browser fallback
+npm run record       # records a demo walk-through of the live app to demo/ (needs a running server)
+FFMPEG=path/to/ffmpeg node scripts/cut-demo.mjs   # trims grading waits and encodes demo/teachback-demo.mp4
                      # (first time: npx playwright install chromium)
 ```
 

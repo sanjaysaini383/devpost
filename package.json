@@ -10,7 +10,8 @@
     "test": "tsx --test lib/core.test.ts",
     "smoke": "tsx scripts/smoke.ts",
     "e2e": "tsx scripts/e2e.ts",
-    "e2e:voice": "tsx scripts/e2e-voice.ts"
+    "e2e:voice": "tsx scripts/e2e-voice.ts",
+    "record": "tsx scripts/record-demo.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
