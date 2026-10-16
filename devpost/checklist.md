@@ -9,7 +9,7 @@ Build mode: fast (learner asked the agent to build autonomously and commit as it
 
 ## Slices
 
-- [ ] **1. You can explain a sample back and watch its lines change colour**
+- [x] **1. You can explain a sample back and watch its lines change colour**
   Becomes usable: `/new` → pick a sample → Analyze → `/session/[id]` shows the code with a heat gutter, one question per chunk; submitting an answer returns a demo verdict and repaints those lines. Sessions persist in localStorage.
   Why now: This is the kernel (`scope.md > The Unique Kernel`). Proving the explain → verdict → heat loop first means every later slice decorates something that already works. Includes the scaffold.
   PRD ref: `prd.md > Bringing code`, `prd.md > Explaining back (the kernel)`, `prd.md > The Core Journey` (steps 2–6)
