@@ -34,15 +34,15 @@
 <main>
   <p class="muted">devpost/app-map.html · snapshot of commit 6892e7f · may drift as the code changes</p>
   <h1>TeachBack App Map</h1>
-  <p>TeachBack asks you to explain AI-written code back, chunk by chunk, and paints each line by how well you understood it. There are three main pieces: <strong>pages</strong> in the browser (<code>app/</code> + <code>components/</code>), <strong>two API routes</strong> on the Next.js server (<code>app/api/analyze</code>, <code>app/api/grade</code>) that talk to Claude or the demo grader, and <strong>pure logic</strong> in <code>lib/</code> (scoring, prompt, session, storage).</p>
+  <p>TeachBack asks you to explain AI-written code back, chunk by chunk, and paints each line by how well you understood it. There are three main pieces: <strong>pages</strong> in the browser (<code>app/</code> + <code>components/</code>), <strong>two API routes</strong> on the Next.js server (<code>app/api/analyze</code>, <code>app/api/grade</code>) that talk to Gemini or the demo grader, and <strong>pure logic</strong> in <code>lib/</code> (scoring, prompt, session, storage).</p>
 
   <h2>One action, end to end: “Submit explanation”</h2>
   <div class="card">
-    <svg viewBox="0 0 860 210" role="img" aria-label="Submit explanation flows from SessionView to the grade route, to Claude or the demo grader, back into the session and the heat gutter">
+    <svg viewBox="0 0 860 210" role="img" aria-label="Submit explanation flows from SessionView to the grade route, to Gemini or the demo grader, back into the session and the heat gutter">
       <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f6f5c"/></marker></defs>
       <rect x="10" y="20" width="190" height="66" rx="10"/><text x="24" y="46">You press Submit</text><text class="sub" x="24" y="68">SessionView.tsx · submit()</text>
       <rect x="250" y="20" width="190" height="66" rx="10"/><text x="264" y="46">POST /api/grade</text><text class="sub" x="264" y="68">app/api/grade/route.ts</text>
-      <rect x="490" y="4" width="170" height="50" rx="10"/><text x="504" y="26">Claude Opus 5.5</text><text class="sub" x="504" y="44">lib/ai.ts · gradeAnswer</text>
+      <rect x="490" y="4" width="170" height="50" rx="10"/><text x="504" y="26">Gemini (free tier)</text><text class="sub" x="504" y="44">lib/ai.ts → lib/llm.ts</text>
       <rect x="490" y="62" width="170" height="50" rx="10"/><text x="504" y="84">Demo grader</text><text class="sub" x="504" y="102">lib/demo.ts · demoGrade</text>
       <rect x="250" y="138" width="190" height="62" rx="10"/><text x="264" y="162">Answer saved</text><text class="sub" x="264" y="184">session.ts · recordAnswer</text>
       <rect x="10" y="138" width="190" height="62" rx="10"/><text x="24" y="162">Lines change colour</text><text class="sub" x="24" y="184">CodeHeat.tsx · lineVerdicts</text>
@@ -59,7 +59,7 @@
   <p class="muted">This is a reference route. It hasn't been toured live yet.</p>
   <ol class="route">
     <li><strong>Input:</strong> <code>components/SessionView.tsx</code>, search <code>async function submit</code>. It posts the code, the active chunk and your explanation to <code>/api/grade</code>. On success it calls <code>update(recordAnswer(...))</code> and sets <code>pulseId</code> so the gutter animates.</li>
-    <li><strong>Logic:</strong> <code>app/api/grade/route.ts</code> validates the request with <code>GradeBody</code> (<code>lib/validate.ts</code>). With an API key it calls <code>gradeAnswer</code> in <code>lib/ai.ts</code>; otherwise, or with <code>?demo=1</code>, it calls <code>demoGrade</code> in <code>lib/demo.ts</code>. Either way the score passes through <code>applyHintCap</code> and <code>verdictFor</code> in <code>lib/scoring.ts</code>.</li>
+    <li><strong>Logic:</strong> <code>app/api/grade/route.ts</code> validates the request with <code>GradeBody</code> (<code>lib/validate.ts</code>). With an API key it calls <code>gradeAnswer</code> in <code>lib/ai.ts</code>, which uses <code>generateJSON</code> in <code>lib/llm.ts</code>; otherwise, or with <code>?demo=1</code>, it calls <code>demoGrade</code> in <code>lib/demo.ts</code>. Either way the score passes through <code>applyHintCap</code> and <code>verdictFor</code> in <code>lib/scoring.ts</code>.</li>
     <li><strong>Result:</strong> <code>components/CodeHeat.tsx</code> calls <code>lineVerdicts()</code>, which gives each line its chunk's verdict. The line's <code>data-state</code> attribute then picks the colour in <code>app/globals.css</code> (search <code>.code-line[data-state="owned"]</code>).</li>
   </ol>
 
@@ -67,7 +67,8 @@
   <table>
     <tr><th>If you want to…</th><th>Start at</th></tr>
     <tr><td>Change what counts as Owned / Shaky / Blind spot</td><td><code>lib/scoring.ts</code> → <code>verdictFor</code></td></tr>
-    <tr><td>Change how Claude grades or what it says</td><td><code>lib/ai.ts</code> → <code>GRADE_SYSTEM</code>, <code>GradeSchema</code></td></tr>
+    <tr><td>Change how the AI grades or what it says</td><td><code>lib/ai.ts</code> → <code>GRADE_SYSTEM</code>, <code>GradeSchema</code></td></tr>
+    <tr><td>Switch AI provider or model</td><td><code>lib/llm.ts</code> → <code>activeProvider</code>; <code>GEMINI_MODEL</code> in <code>.env.local</code></td></tr>
     <tr><td>Add or edit a built-in sample</td><td><code>lib/samples.ts</code> → <code>DEFS</code> (chunks find lines by anchor text)</td></tr>
     <tr><td>Change the “Teach me my blind spots” prompt</td><td><code>lib/prompt.ts</code> → <code>blindSpotPrompt</code></td></tr>
     <tr><td>Change colours or fonts</td><td><code>app/globals.css</code> → <code>:root</code> tokens; fonts in <code>app/layout.tsx</code></td></tr>
@@ -83,7 +84,7 @@
   <h2>Run it again</h2>
   <details open>
     <summary>Commands</summary>
-    <p><code>npm install</code> then <code>npm run dev</code> and open <code>http://localhost:3000</code>. For live grading, put <code>ANTHROPIC_API_KEY</code> in <code>.env.local</code>. Checks: <code>npm test</code>, <code>npm run smoke</code>, <code>npm run e2e</code>.</p>
+    <p><code>npm install</code> then <code>npm run dev</code> and open <code>http://localhost:3000</code>. For free live grading, put <code>GEMINI_API_KEY</code> in <code>.env.local</code>. Checks: <code>npm test</code>, <code>npm run smoke</code>, <code>npm run e2e</code>.</p>
   </details>
 </main>
 </body>

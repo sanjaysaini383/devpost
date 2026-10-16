@@ -136,3 +136,12 @@ test("blind-spot prompt lists only weak chunks and asks the agent to teach", asy
   assert.match(p, /\(Not answered\)/); // c4
   assert.doesNotMatch(p, /Per-client buckets/); // owned chunk excluded
 });
+
+test("gemini provider: model JSON is validated against the schema", async () => {
+  const { validate, GraderError } = await import("./llm");
+  const { z } = await import("zod");
+  const S = z.object({ score: z.number().int(), missed: z.array(z.string()) });
+  assert.deepEqual(validate(S, '{"score": 80, "missed": []}'), { score: 80, missed: [] });
+  assert.throws(() => validate(S, "not json"), GraderError);
+  assert.throws(() => validate(S, '{"score": "high"}'), GraderError);
+});

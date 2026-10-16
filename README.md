@@ -25,14 +25,14 @@ It's the *teach-back* method nurses use to confirm a patient understood their in
 ## How it works
 
 - **Next.js 16 (App Router), React 19, TypeScript.** Pages run in the browser, and sessions are saved in `localStorage`, so there's no account and no database.
-- **`/api/analyze`** asks **Claude Opus 5.5** to split the code into 3–6 meaningful chunks. Each chunk gets a *why/how* question, rubric concepts and a hint. The output is a schema-validated JSON response (`client.beta.messages.parse` with a zod schema), and the line ranges are repaired server-side so the UI can trust them.
-- **`/api/grade`** asks Claude to grade one explanation against that chunk's rubric. It judges meaning, not vocabulary, and returns a 0–100 score, coaching feedback and missed concepts. The learner's text is fenced off and treated only as an answer, never as instructions.
+- **`/api/analyze`** asks the AI model (**Google Gemini** on the free tier by default, or Claude if you prefer) to split the code into 3–6 meaningful chunks. Each chunk gets a *why/how* question, rubric concepts and a hint. The output is a schema-validated JSON response (a zod schema sent as Gemini `responseJsonSchema`, then validated again on the server), and the line ranges are repaired server-side so the UI can trust them.
+- **`/api/grade`** asks the model to grade one explanation against that chunk's rubric. It judges meaning, not vocabulary, and returns a 0–100 score, coaching feedback and missed concepts. The learner's text is fenced off and treated only as an answer, never as instructions.
 - **Demo grader:** without an API key, the same routes answer with an offline keyword-matching grader and curated sample chunks. The nav badge and every verdict say **"Demo grader"**, so nothing pretends to be AI.
 - The API key stays server-side. Requests use server-side refusal fallback, and errors map to friendly messages with *Try again* and *Use demo grader*.
 
 ```
-browser ──/new──▶ POST /api/analyze ──▶ Claude (chunks + questions) ──▶ session saved in localStorage
-        ──answer─▶ POST /api/grade   ──▶ Claude (score + feedback)  ──▶ heat gutter repaints
+browser ──/new──▶ POST /api/analyze ──▶ Gemini (chunks + questions) ──▶ session saved in localStorage
+        ──answer─▶ POST /api/grade   ──▶ Gemini (score + feedback)  ──▶ heat gutter repaints
         ──report─▶ ownershipScore() + blindSpotPrompt()  (pure functions in lib/)
 ```
 
@@ -45,7 +45,13 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-For live AI grading, copy `.env.example` to `.env.local` and set `ANTHROPIC_API_KEY`, then restart. Without it, the app runs end to end in labelled demo mode.
+### Free AI grading with Gemini
+
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey), sign in with a Google account, and click **Create API key**. It's free, and no credit card is needed.
+2. Copy `.env.example` to `.env.local` and paste the key after `GEMINI_API_KEY=`.
+3. Restart `npm run dev`. The nav badge changes to **AI grader · Gemini**.
+
+The free tier allows roughly 10 requests a minute, which is plenty: a session makes one request per answer. Google may use free-tier prompts to improve its products, so don't paste secrets. `GEMINI_MODEL` overrides the default `gemini-flash-latest`. If you'd rather use Claude, set `ANTHROPIC_API_KEY` instead. Without any key, the app runs end to end in labelled demo mode.
 
 ### Checks
 
@@ -72,7 +78,7 @@ This project was planned and built with the [Devpost Learn skill pack](https://g
 ```
 app/            routes: / · /new · /session/[id] · /session/[id]/report · /library · /api/{analyze,grade,status}
 components/     CodeHeat (heat-painted code), SessionView, ReportView, LibraryView, ScoreDial, TrendChart, …
-lib/            ai.ts (Claude), demo.ts (offline grader), samples.ts, scoring.ts, prompt.ts, session.ts, storage.ts
+lib/            ai.ts (prompts), llm.ts (Gemini/Claude providers), demo.ts (offline grader), samples.ts, scoring.ts, prompt.ts, session.ts, storage.ts
 scripts/        smoke.ts, e2e.ts
 devpost/        planning docs from the skill pack
 ```

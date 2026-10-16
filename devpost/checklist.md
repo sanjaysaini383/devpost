@@ -84,3 +84,4 @@ Activity mode: pending learner
 
 - Live AI grading verified only up to authentication (fake key → clean "API key was rejected" error and demo fallback); no real ANTHROPIC_API_KEY was available during the build, so a real Opus 5.5 response shape is still to be checked by the learner before recording.
 - Analyze also got a "Continue with demo grader" fallback (PRD only specified it for grading) — an analyze failure would otherwise dead-end the journey.
+- Switched the default AI provider from Claude to Google Gemini's free tier (`lib/llm.ts`). The learner has no Anthropic account and asked for a free alternative. Claude stays available as an optional provider. Verified up to authentication with a fake key ("The Gemini API key was rejected."). A real Gemini response still needs checking once the learner adds a key.

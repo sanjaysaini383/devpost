@@ -32,11 +32,11 @@ export function NavBar() {
             className={`mode-badge ${status.ai ? "ai" : "demo"}`}
             title={
               status.ai
-                ? "Chunking and grading by Claude Opus 5.5"
-                : "No ANTHROPIC_API_KEY set: using the offline keyword-matching demo grader"
+                ? `Chunking and grading by ${status.model ?? "AI"}`
+                : "No AI key set (GEMINI_API_KEY): using the offline keyword-matching demo grader"
             }
           >
-            {status.ai ? "AI grader" : "Demo grader"}
+            {status.ai ? `AI grader · ${status.provider === "gemini" ? "Gemini" : "Claude"}` : "Demo grader"}
           </span>
         )}
       </nav>

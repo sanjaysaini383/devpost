@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const forceDemo = new URL(request.url).searchParams.get("demo") === "1";
   if (forceDemo || !hasApiKey()) return NextResponse.json(demoAnalyze(body));
 
-  // Unedited samples keep their curated chunks; Claude still grades the answers.
+  // Unedited samples keep their curated chunks; the AI still grades the answers.
   const sample = sampleForCode(body.sampleId, body.code);
   if (sample) return NextResponse.json({ mode: "ai", title: sample.title, chunks: sample.chunks });
 

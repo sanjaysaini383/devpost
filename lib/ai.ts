@@ -1,24 +1,16 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { heuristicChunks } from "./demo";
+import { activeProvider, generateJSON } from "./llm";
 import { applyHintCap, verdictFor } from "./scoring";
 import type { AnalyzeRequest, AnalyzeResponse, Chunk, GradeRequest, GradeResponse } from "./types";
 
-export const MODEL = "claude-opus-5-5";
+export { activeModel, activeProvider, GraderError } from "./llm";
+
 const MAX_CHUNKS = 6;
 
 export function hasApiKey(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY?.trim();
+  return activeProvider() !== null;
 }
-
-let client: Anthropic | null = null;
-function getClient(): Anthropic {
-  client ??= new Anthropic({ timeout: 60_000, maxRetries: 1 });
-  return client;
-}
-
-export class GraderError extends Error {}
 
 const AnalysisSchema = z.object({
   title: z.string().describe("A short, specific name for this code, 2-6 words"),
@@ -99,40 +91,10 @@ export function repairChunks(raw: Omit<Chunk, "id">[], lineCount: number): Chunk
   return out.filter((c) => c.question && c.concepts.length);
 }
 
-async function parse<T>(
-  schema: z.ZodType<T>,
-  system: string,
-  user: string,
-  effort: "low" | "medium",
-): Promise<T> {
-  try {
-    const response = await getClient().beta.messages.parse({
-      model: MODEL,
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort, format: betaZodOutputFormat(schema) },
-      system,
-      messages: [{ role: "user", content: user }],
-    });
-    if (response.stop_reason === "refusal") throw new GraderError("The model declined to grade this request.");
-    if (response.stop_reason === "max_tokens") throw new GraderError("The model's answer was cut off.");
-    if (!response.parsed_output) throw new GraderError("The model returned an unreadable answer.");
-    return response.parsed_output as T;
-  } catch (err) {
-    if (err instanceof GraderError) throw err;
-    if (err instanceof Anthropic.AuthenticationError) throw new GraderError("The API key was rejected.");
-    if (err instanceof Anthropic.RateLimitError) throw new GraderError("Rate limited - wait a moment and retry.");
-    if (err instanceof Anthropic.APIConnectionTimeoutError) throw new GraderError("The model took too long.");
-    if (err instanceof Anthropic.APIConnectionError) throw new GraderError("Couldn't reach the Anthropic API.");
-    if (err instanceof Anthropic.APIError) throw new GraderError(`Anthropic API error ${err.status ?? ""}`.trim());
-    throw new GraderError("Unexpected grader failure.");
-  }
-}
 
 export async function analyzeCode(req: AnalyzeRequest): Promise<AnalyzeResponse> {
   const lineCount = req.code.split("\n").length;
-  const result = await parse(
+  const result = await generateJSON(
     AnalysisSchema,
     ANALYZE_SYSTEM,
     `Language: ${req.language}\nWhat the developer says it should do: ${req.intent || "(not given)"}\n\nCode:\n${numbered(req.code)}`,
@@ -162,7 +124,7 @@ export async function gradeAnswer(req: GradeRequest): Promise<GradeResponse> {
     .filter(Boolean)
     .join("\n\n");
 
-  const result = await parse(GradeSchema, GRADE_SYSTEM, user, "low");
+  const result = await generateJSON(GradeSchema, GRADE_SYSTEM, user, "low");
   const score = applyHintCap(result.score, req.hintUsed);
   return {
     mode: "ai",

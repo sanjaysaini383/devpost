@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 export interface GraderStatus {
   ai: boolean;
+  provider?: "gemini" | "anthropic" | null;
+  model?: string | null;
 }
 
 let cached: GraderStatus | null = null;

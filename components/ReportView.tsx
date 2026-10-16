@@ -179,7 +179,7 @@ export function ReportView({ id }: { id: string }) {
                       </ul>
                     )}
                     <p className="muted small">
-                      {a.mode === "ai" ? "Graded by Claude" : "Demo grader"}
+                      {a.mode === "ai" ? "Graded by AI" : "Demo grader"}
                       {a.hintUsed ? " · hint used" : ""}
                     </p>
                   </>

@@ -39,7 +39,7 @@ export default function Home() {
           <span className="step-num">2</span>
           <h3>Explain it back</h3>
           <p className="muted">
-            One review-style question per chunk. Answer in plain words. Claude grades the <em>understanding</em>, not
+            One review-style question per chunk. Answer in plain words. The AI grades the <em>understanding</em>, not
             your vocabulary, and tells you what you missed.
           </p>
         </div>

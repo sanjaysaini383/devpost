@@ -11,7 +11,7 @@ status: approved
 TeachBack is one Next.js web app with two halves:
 
 - **The pages** (Home, New, Session, Report, Library) run in your browser. They show the code, collect your explanations, and paint the heatmap. Your sessions are saved in the browser's **localStorage** — a small notebook the browser keeps for this one site — so nothing needs a database or an account.
-- **Two small server routes** (`/api/analyze` and `/api/grade`) run on the Next.js server. They are the only place the Anthropic API key lives. The browser sends code or an explanation; the server asks Claude for a structured JSON answer (chunks + questions, or a verdict + feedback) and sends it back.
+- **Two small server routes** (`/api/analyze` and `/api/grade`) run on the Next.js server. They are the only place the AI API key lives. The browser sends code or an explanation; the server asks the AI model (Google Gemini, free tier) for a structured JSON answer (chunks + questions, or a verdict + feedback) and sends it back.
 
 If there's no API key, the same routes answer with a **demo grader**: pre-written chunks for the three samples, simple line-based chunking for pasted code, and a concept-matching scorer. Every demo result is labelled `mode: "demo"` and the UI shows a "Demo grader" badge.
 
@@ -20,7 +20,7 @@ Why this shape: one project, one `npm run dev`, no database, and the key never r
 ## The Core Journey Through the System
 PRD ref: `prd.md > The Core Journey`.
 1. User opens `/new`, pastes code or picks a sample → `components/NewSessionForm.tsx` validates line count.
-2. Analyze → `POST /api/analyze {code, language, intent, sampleId?}` → `lib/ai.ts#analyzeCode` (Claude) or `lib/demo.ts#demoAnalyze` → returns `{mode, title, chunks[]}`.
+2. Analyze → `POST /api/analyze {code, language, intent, sampleId?}` → `lib/ai.ts#analyzeCode` (Gemini via `lib/llm.ts`) or `lib/demo.ts#demoAnalyze` → returns `{mode, title, chunks[]}`.
 3. Browser builds a `Session` (`lib/session.ts#createSession`), saves it via `lib/storage.ts`, routes to `/session/[id]`.
 4. User submits an explanation → `POST /api/grade {code, chunk, answer, hintUsed, intent}` → `lib/ai.ts#gradeAnswer` or `lib/demo.ts#demoGrade` → `{mode, score, verdict, feedback, missed[]}`; `lib/scoring.ts#applyHintCap` and `verdictFor` normalise it.
 5. Session state updates → `components/CodeHeat.tsx` repaints the chunk's lines; storage saves.
@@ -29,8 +29,9 @@ PRD ref: `prd.md > The Core Journey`.
 
 ## Stack
 - **Next.js 16 (App Router) + React 19 + TypeScript 5** — https://nextjs.org/docs. One framework covers pages and server routes; easy optional deploy to Vercel.
-- **@anthropic-ai/sdk 0.135** — https://github.com/anthropics/anthropic-sdk-typescript. `client.beta.messages.parse` with `betaZodOutputFormat` for schema-validated JSON, `fallbacks: "default"` for refusal fallback.
-- **Model: `claude-opus-5-5`**, adaptive thinking (default), `output_config.effort` = `medium` for analysis, `low` for grading (fast feedback).
+- **@google/genai 2.30** — https://ai.google.dev/gemini-api/docs. `models.generateContent` with `responseMimeType: "application/json"` + `responseJsonSchema` (from zod via `z.toJSONSchema`), re-validated with zod. **Learner choice:** a free provider, because the learner has no Anthropic account.
+- **@anthropic-ai/sdk 0.135** (optional) — used only if `ANTHROPIC_API_KEY` is set and `GEMINI_API_KEY` is not.
+- **Model:** `gemini-flash-latest` by default (override with `GEMINI_MODEL`); `claude-opus-5-5` when using Claude.
 - **zod 4** — https://zod.dev. Schemas for AI output and request bodies.
 - **Plain CSS** with design tokens in `app/globals.css` (no Tailwind) — full control over the editorial look.
 - **Fonts via `next/font/google`**: Fraunces, IBM Plex Sans, IBM Plex Mono.
@@ -39,9 +40,9 @@ PRD ref: `prd.md > The Core Journey`.
 
 ## Where It Runs and How Someone Tries It
 - Node.js 20+. `npm install`, then `npm run dev`, open http://localhost:3000.
-- Optional live AI: copy `.env.example` to `.env.local` and set `ANTHROPIC_API_KEY`. Without it the app runs in demo mode.
+- Optional live AI: copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` (free from https://aistudio.google.com/apikey). Without it the app runs in demo mode.
 - Demo recording: Home → New → pick "Rate limiter" sample → Analyze → answer chunks (one good, one vague, one skip) → Report → Copy prompt → Library.
-- Deployment optional (Vercel: import repo, add `ANTHROPIC_API_KEY` env var).
+- Deployment optional (Vercel: import repo, add `GEMINI_API_KEY` env var).
 
 ## Look and Feel
 From `prd.md > Look and Feel`.
@@ -109,18 +110,20 @@ teachback/
 ├── components/                 # UI pieces listed under Components
 ├── lib/                        # logic listed under Components > Logic (+ *.test.ts)
 ├── devpost/                    # planning docs (learner-profile.md is git-ignored)
-├── .env.example                # ANTHROPIC_API_KEY=
+├── .env.example                # GEMINI_API_KEY= (ANTHROPIC_API_KEY optional)
 ├── package.json, tsconfig.json, next.config.ts
 └── README.md
 ```
 
 ## External Services and Dependencies
-**Anthropic Messages API** — https://platform.claude.com/docs
-- Call: `client.beta.messages.parse({ model: "claude-opus-5-5", max_tokens: 16000, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default", output_config: { effort, format: betaZodOutputFormat(Schema) }, system, messages })`.
-- Analyze output: `{ title, chunks: [{ title, startLine, endLine, question, concepts[3-5], hint }] }` (3–6 chunks).
-- Grade output: `{ score 0-100, feedback, missed[] }`; verdict derived locally.
-- Key: `ANTHROPIC_API_KEY` server-side only. Cost: Opus 5.5 $4/$20 per MTok — a session is a handful of short calls.
-- Check `stop_reason === "refusal"` and null `parsed_output` → treat as failure (UI offers demo grader).
+**Google Gemini API (default, free tier)**: https://ai.google.dev/gemini-api/docs
+- Call: `ai.models.generateContent({ model, contents: user, config: { systemInstruction, responseMimeType: "application/json", responseJsonSchema, temperature: 0.2 } })`, then `JSON.parse(response.text)` and validate with zod.
+- Key: `GEMINI_API_KEY` from Google AI Studio, server-side only. Free tier, no card. Rate limits are roughly 10 requests/min on Flash models (per third-party guides; check in AI Studio). Free-tier prompts may be used by Google to improve products.
+- Errors: 429 → "rate limit, wait a minute"; 400/401/403 with a key message → "key rejected"; 404 → "check GEMINI_MODEL".
+
+**Anthropic Messages API (optional)**: https://platform.claude.com/docs. Used only when `ANTHROPIC_API_KEY` is set and no Gemini key is: `client.beta.messages.parse` with `betaZodOutputFormat`, `fallbacks: "default"`.
+
+Both providers return the same shapes. Analyze returns `{ title, chunks: [{ title, startLine, endLine, question, concepts[], hint }] }`. Grade returns `{ score 0-100, feedback, missed[] }`, and the verdict is derived locally.
 
 ## Important Failure Modes
 - **AI call fails / refuses / times out** → route returns 502 with message; Session shows "Try again" + "Use demo grader".
@@ -135,5 +138,5 @@ teachback/
 
 ## Decisions and Open Issues
 - All stack choices above are agent decisions under delegation; rationale given inline.
-- Genuine uncertainty (agent-side, since the learner didn't raise one): does Opus 5.5 return reliable 1-based line ranges? Investigation: the clamp/repair step plus a unit test on `repairChunks`, and a live check if a key is present.
+- Genuine uncertainty (agent-side, since the learner didn't raise one): does the model return reliable 1-based line ranges? Investigation: the clamp/repair step plus a unit test on `repairChunks`, and a live check if a key is present.
 - Open: none blocking.
