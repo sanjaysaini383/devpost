@@ -53,12 +53,12 @@ export function NewSessionForm() {
   const tooLong = n > MAX_LINES;
   const canAnalyze = n >= MIN_LINES && !tooLong && !busy;
 
-  async function analyze() {
+  async function analyze(forceDemo = false) {
     setBusy(true);
     setStage(0);
     setError(null);
     try {
-      const res = await fetch("/api/analyze", {
+      const res = await fetch(`/api/analyze${forceDemo ? "?demo=1" : ""}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ code, language, intent, sampleId }),
@@ -141,12 +141,20 @@ export function NewSessionForm() {
         </label>
 
         {error && (
-          <p className="notice error" role="alert">
-            {error}
-          </p>
+          <div className="notice error stack" role="alert" style={{ gap: 8 }}>
+            <span>{error}</span>
+            <div className="row">
+              <button className="btn" onClick={() => analyze()}>
+                Try again
+              </button>
+              <button className="btn ghost" onClick={() => analyze(true)}>
+                Continue with demo grader
+              </button>
+            </div>
+          </div>
         )}
         <div className="row">
-          <button className="btn primary" onClick={analyze} disabled={!canAnalyze}>
+          <button className="btn primary" onClick={() => analyze()} disabled={!canAnalyze}>
             {busy ? (
               <span className="analyzing">
                 <span className="spinner" aria-hidden /> {STAGES[stage]}

@@ -100,3 +100,21 @@ test("heuristic chunks cover pasted code in 3–6 ordered pieces", () => {
   assert.ok(out.length >= 3 && out.length <= 6, `got ${out.length}`);
   for (let i = 1; i < out.length; i++) assert.ok(out[i].startLine > out[i - 1].endLine);
 });
+
+test("repairChunks clamps, orders and de-overlaps model ranges", async () => {
+  const { repairChunks } = await import("./ai");
+  const base = { title: "t", question: "q?", concepts: ["x"], hint: "h" };
+  const out = repairChunks(
+    [
+      { ...base, startLine: 8, endLine: 12 },
+      { ...base, startLine: 0, endLine: 5 },
+      { ...base, startLine: 4, endLine: 9 }, // overlaps both neighbours
+      { ...base, startLine: 30, endLine: 99 }, // beyond the file
+    ],
+    20,
+  );
+  assert.deepEqual(
+    out.map((c) => [c.id, c.startLine, c.endLine]),
+    [["c1", 1, 5], ["c2", 6, 9], ["c3", 10, 12], ["c4", 20, 20]],
+  );
+});

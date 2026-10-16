@@ -19,7 +19,7 @@ Build mode: fast (learner asked the agent to build autonomously and commit as it
   Learner check: Open http://localhost:3000/new, pick "Rate limiter", Analyze, answer the first chunk well and the second vaguely, and see one turn green and one amber/red.
   Commit: `Add teach-back loop with heat-painted code (demo grader)`
 
-- [ ] **2. Claude does the chunking and grading for real**
+- [x] **2. Claude does the chunking and grading for real**
   Becomes usable: With `ANTHROPIC_API_KEY` set, any pasted code is chunked and graded by Claude Opus 5.5; the nav shows "AI grader" vs "Demo grader"; failures show Try again / Use demo grader.
   Why now: The live AI is the riskiest dependency; wire it right after the loop exists so its shape is verified before more UI depends on it.
   PRD ref: `prd.md > Chunking and questions`, `prd.md > States and Boundaries`
@@ -82,3 +82,5 @@ Activity mode:
 
 ## Revisions
 
+- Live AI grading verified only up to authentication (fake key → clean "API key was rejected" error and demo fallback); no real ANTHROPIC_API_KEY was available during the build, so a real Opus 5.5 response shape is still to be checked by the learner before recording.
+- Analyze also got a "Continue with demo grader" fallback (PRD only specified it for grading) — an analyze failure would otherwise dead-end the journey.
