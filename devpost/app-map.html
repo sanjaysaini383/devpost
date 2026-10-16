@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TeachBack App Map</title>
+<style>
+  :root { --paper:#f6f1e7; --card:#fffaf0; --ink:#1d1b16; --muted:#6b6458; --line:#e2d9c6; --accent:#1f6f5c; --owned:#2f9e7a; --shaky:#e0a526; --gap:#e0533d; --code:#fbf7ee; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper:#15140f; --card:#1f1d17; --ink:#f2ecdf; --muted:#a39a89; --line:#353126; --accent:#4cc39d; --code:#191812; } }
+  :root[data-theme="dark"] { --paper:#15140f; --card:#1f1d17; --ink:#f2ecdf; --muted:#a39a89; --line:#353126; --accent:#4cc39d; --code:#191812; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 system-ui, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-family: Georgia, serif; font-size: 2rem; margin: 0 0 6px; }
+  h2 { font-family: Georgia, serif; font-size: 1.3rem; margin: 34px 0 10px; }
+  p { margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 10px 0; }
+  code { font-family: ui-monospace, monospace; font-size: .88em; background: var(--code); padding: 1px 5px; border-radius: 5px; }
+  ol.route { padding-left: 22px; }
+  ol.route li { margin-bottom: 12px; }
+  svg { width: 100%; height: auto; display: block; }
+  svg text { font: 13px system-ui, sans-serif; fill: var(--ink); }
+  svg .sub { font-size: 11px; fill: var(--muted); font-family: ui-monospace, monospace; }
+  svg rect { fill: var(--card); stroke: var(--line); stroke-width: 1.5; }
+  svg .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+  details { margin: 8px 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  td, th { text-align: left; border-bottom: 1px solid var(--line); padding: 8px 6px; vertical-align: top; }
+</style>
+</head>
+<body>
+<main>
+  <p class="muted">devpost/app-map.html · snapshot of commit 6892e7f · may drift as the code changes</p>
+  <h1>TeachBack App Map</h1>
+  <p>TeachBack asks you to explain AI-written code back, chunk by chunk, and paints each line by how well you understood it. There are three main pieces: <strong>pages</strong> in the browser (<code>app/</code> + <code>components/</code>), <strong>two API routes</strong> on the Next.js server (<code>app/api/analyze</code>, <code>app/api/grade</code>) that talk to Claude or the demo grader, and <strong>pure logic</strong> in <code>lib/</code> (scoring, prompt, session, storage).</p>
+
+  <h2>One action, end to end: “Submit explanation”</h2>
+  <div class="card">
+    <svg viewBox="0 0 860 210" role="img" aria-label="Submit explanation flows from SessionView to the grade route, to Claude or the demo grader, back into the session and the heat gutter">
+      <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f6f5c"/></marker></defs>
+      <rect x="10" y="20" width="190" height="66" rx="10"/><text x="24" y="46">You press Submit</text><text class="sub" x="24" y="68">SessionView.tsx · submit()</text>
+      <rect x="250" y="20" width="190" height="66" rx="10"/><text x="264" y="46">POST /api/grade</text><text class="sub" x="264" y="68">app/api/grade/route.ts</text>
+      <rect x="490" y="4" width="170" height="50" rx="10"/><text x="504" y="26">Claude Opus 5.5</text><text class="sub" x="504" y="44">lib/ai.ts · gradeAnswer</text>
+      <rect x="490" y="62" width="170" height="50" rx="10"/><text x="504" y="84">Demo grader</text><text class="sub" x="504" y="102">lib/demo.ts · demoGrade</text>
+      <rect x="250" y="138" width="190" height="62" rx="10"/><text x="264" y="162">Answer saved</text><text class="sub" x="264" y="184">session.ts · recordAnswer</text>
+      <rect x="10" y="138" width="190" height="62" rx="10"/><text x="24" y="162">Lines change colour</text><text class="sub" x="24" y="184">CodeHeat.tsx · lineVerdicts</text>
+      <path class="arrow" d="M200,53 L248,53"/>
+      <path class="arrow" d="M440,45 L488,30"/>
+      <path class="arrow" d="M440,62 L488,86"/>
+      <path class="arrow" d="M660,58 C760,58 760,169 442,169"/>
+      <path class="arrow" d="M250,169 L202,169"/>
+      <text class="sub" x="700" y="130">score · verdict · feedback · missed</text>
+    </svg>
+  </div>
+
+  <h2>Reference route (3 stops)</h2>
+  <p class="muted">This is a reference route. It hasn't been toured live yet.</p>
+  <ol class="route">
+    <li><strong>Input:</strong> <code>components/SessionView.tsx</code>, search <code>async function submit</code>. It posts the code, the active chunk and your explanation to <code>/api/grade</code>. On success it calls <code>update(recordAnswer(...))</code> and sets <code>pulseId</code> so the gutter animates.</li>
+    <li><strong>Logic:</strong> <code>app/api/grade/route.ts</code> validates the request with <code>GradeBody</code> (<code>lib/validate.ts</code>). With an API key it calls <code>gradeAnswer</code> in <code>lib/ai.ts</code>; otherwise, or with <code>?demo=1</code>, it calls <code>demoGrade</code> in <code>lib/demo.ts</code>. Either way the score passes through <code>applyHintCap</code> and <code>verdictFor</code> in <code>lib/scoring.ts</code>.</li>
+    <li><strong>Result:</strong> <code>components/CodeHeat.tsx</code> calls <code>lineVerdicts()</code>, which gives each line its chunk's verdict. The line's <code>data-state</code> attribute then picks the colour in <code>app/globals.css</code> (search <code>.code-line[data-state="owned"]</code>).</li>
+  </ol>
+
+  <h2>To change this, start here</h2>
+  <table>
+    <tr><th>If you want to…</th><th>Start at</th></tr>
+    <tr><td>Change what counts as Owned / Shaky / Blind spot</td><td><code>lib/scoring.ts</code> → <code>verdictFor</code></td></tr>
+    <tr><td>Change how Claude grades or what it says</td><td><code>lib/ai.ts</code> → <code>GRADE_SYSTEM</code>, <code>GradeSchema</code></td></tr>
+    <tr><td>Add or edit a built-in sample</td><td><code>lib/samples.ts</code> → <code>DEFS</code> (chunks find lines by anchor text)</td></tr>
+    <tr><td>Change the “Teach me my blind spots” prompt</td><td><code>lib/prompt.ts</code> → <code>blindSpotPrompt</code></td></tr>
+    <tr><td>Change colours or fonts</td><td><code>app/globals.css</code> → <code>:root</code> tokens; fonts in <code>app/layout.tsx</code></td></tr>
+    <tr><td>Change where sessions are stored</td><td><code>lib/storage.ts</code> (localStorage key <code>teachback.sessions.v1</code>)</td></tr>
+  </table>
+
+  <h2>A practice to reuse</h2>
+  <div class="card">
+    <p><strong>Make the AI's output something you can check, then check it in code.</strong> The spec named one real uncertainty (<code>spec.md › Decisions and Open Issues</code>): would the model return reliable line ranges? The answer wasn't “trust the prompt”. It was a structured-output schema plus <code>repairChunks()</code> in <code>lib/ai.ts</code>, pinned by the test <em>“repairChunks clamps, orders and de-overlaps model ranges”</em> in <code>lib/core.test.ts</code>.</p>
+    <p>On your next project, whenever an AI response drives your UI, write down the shape you need, validate it, and add one test for the messy case.</p>
+  </div>
+
+  <h2>Run it again</h2>
+  <details open>
+    <summary>Commands</summary>
+    <p><code>npm install</code> then <code>npm run dev</code> and open <code>http://localhost:3000</code>. For live grading, put <code>ANTHROPIC_API_KEY</code> in <code>.env.local</code>. Checks: <code>npm test</code>, <code>npm run smoke</code>, <code>npm run e2e</code>.</p>
+  </details>
+</main>
+</body>
+</html>

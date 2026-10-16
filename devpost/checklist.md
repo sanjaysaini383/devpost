@@ -72,13 +72,13 @@ Build mode: fast (learner asked the agent to build autonomously and commit as it
 
 - [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
 - [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence:
-Route and stops:
-Edit outcome:
-Reflection:
-Activity mode:
+Activity and evidence: Not yet done with the learner (autonomous build). Agent-side verification: 11 unit tests, `scripts/smoke.ts` (11 checks), `scripts/e2e.ts` full browser journey in light + dark, mobile overflow check.
+Route and stops: Reference route only, documented in app-map.html: `components/SessionView.tsx#submit` → `app/api/grade/route.ts` → `lib/ai.ts#gradeAnswer` / `lib/demo.ts#demoGrade` → `lib/session.ts#recordAnswer` → `components/CodeHeat.tsx` + `lib/scoring.ts#lineVerdicts`.
+Edit outcome: not offered yet
+Reflection: not offered yet
+Activity mode: pending learner
 
 ## Revisions
 
