@@ -118,3 +118,21 @@ test("repairChunks clamps, orders and de-overlaps model ranges", async () => {
     [["c1", 1, 5], ["c2", 6, 9], ["c3", 10, 12], ["c4", 20, 20]],
   );
 });
+
+test("blind-spot prompt lists only weak chunks and asks the agent to teach", async () => {
+  const { blindSpotPrompt } = await import("./prompt");
+  const s = SAMPLES[0];
+  const session: Session = {
+    id: "x", title: s.title, language: s.language, intent: "", code: s.code, mode: "demo",
+    chunks: s.chunks, hintsShown: [], createdAt: "",
+    answers: { c1: ans(90), c2: { ...ans(50), missed: ["Math.min caps tokens at capacity"] }, c3: ans(10) },
+  };
+  const p = blindSpotPrompt(session);
+  assert.match(p, /Teach me/);
+  assert.match(p, /don't rewrite the code/);
+  assert.match(p, /Refilling tokens \(Shaky\)/);
+  assert.match(p, /Math\.min caps tokens at capacity/);
+  assert.match(p, /\(Blind spot\)/);
+  assert.match(p, /\(Not answered\)/); // c4
+  assert.doesNotMatch(p, /Per-client buckets/); // owned chunk excluded
+});

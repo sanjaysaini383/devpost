@@ -29,7 +29,7 @@ Build mode: fast (learner asked the agent to build autonomously and commit as it
   Learner check: Paste your own code into `/new` and confirm it gets sensible chunks and questions.
   Commit: `Wire Claude Opus 5.5 analysis and grading with demo fallback`
 
-- [ ] **3. You get your Ownership Map and a blind-spot prompt**
+- [x] **3. You get your Ownership Map and a blind-spot prompt**
   Becomes usable: `/session/[id]/report` with score dial, fully painted code, per-chunk cards, copyable "Teach me my blind spots" prompt, Retake.
   Why now: Completes the core journey end to end — the moment the demo video builds toward.
   PRD ref: `prd.md > Ownership Map report`
