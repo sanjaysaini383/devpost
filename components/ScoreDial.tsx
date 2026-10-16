@@ -23,7 +23,7 @@ export function ScoreDial({ score, size = 180 }: { score: number; size?: number 
       </svg>
       <div className="dial-num">
         <div>
-          <strong>{score}%</strong>
+          <strong style={{ fontSize: Math.round(size * 0.26) }}>{score}%</strong>
           <span className="muted small">owned</span>
         </div>
       </div>

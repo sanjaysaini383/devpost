@@ -49,7 +49,7 @@ Build mode: fast (learner asked the agent to build autonomously and commit as it
   Learner check: Do two sessions and see both in the library with a trend line.
   Commit: `Add session library with score trend`
 
-- [ ] **5. The front door explains it in five seconds**
+- [x] **5. The front door explains it in five seconds**
   Becomes usable: Home page with pitch, 3-step how-it-works and an animated sample map; not-found states; responsive and dark mode polish.
   Why now: Presentation matters for judging, but only once everything it advertises works.
   PRD ref: `prd.md > Screens and Layout`, `prd.md > Look and Feel`, `prd.md > States and Boundaries`

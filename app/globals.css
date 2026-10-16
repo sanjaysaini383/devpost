@@ -949,6 +949,13 @@ textarea.code-input {
   background: linear-gradient(transparent 62%, var(--shaky-bg) 62%);
 }
 
+.home-dial {
+  position: absolute;
+  right: -18px;
+  bottom: -26px;
+  padding: 10px;
+}
+
 .steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -991,6 +998,10 @@ textarea.code-input {
   }
   .steps {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .home-dial {
+    right: 10px;
+    bottom: 10px;
   }
   .report-top {
     grid-template-columns: minmax(0, 1fr);
